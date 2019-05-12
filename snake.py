@@ -18,13 +18,16 @@ class Game:
     
     def advanceState(self):
         
-        self.snake.moveForward()
+        if (self.snake.isForwardOutOfBounds()):
+            self.state = "lost"
+        elif(self.snake.isForwardfood(self.food)):
+            self.state = "won"
+        else:    
+            self.snake.moveForward()
         
         # todo potentially die
         # todo potentially eat, get longer, make new food
         # todo move snake
-        x=1
-
     
 #############################
 class Snake:
@@ -54,13 +57,20 @@ class Snake:
             return self.head.y
         
     def isForwardfood(self, food):
-        x=1 # todo
+        if(self.getNextX() == food.x and self.getNextY() == food.y):
+            return True
+        else:
+            return False
         
     def isForwardSnake(self):
         x=1 # todo
         
     def isForwardOutOfBounds(self):
-        x=1 # todo
+        if(self.getNextX() < 0 or self.getNextX() > 15
+            or self.getNextY() < 0 or self.getNextY() > 15):
+            return True
+        else:
+            return False
 
     def moveForward(self):
         newx = self.getNextX()
@@ -111,8 +121,9 @@ def drawSnake(game):
 
 #############################
 def drawFood(game):
-    x = 15
-    y = 15
+    x = game.food.x
+    y = game.food.y
+
     unicornhathd.set_pixel_hsv(x,y,0.2,1,1) #xyhsv
 
 #############################
@@ -137,11 +148,13 @@ try:
         if(game.state == "alive"):
             drawSnake(game)
             drawFood(game)
-        elif(game.state == "loss"):
+        elif(game.state == "lost"):
             #todo display win or loss
+            print ("You lost...!")
             raise Exception
         elif(game.state == "won"):
             #todo display win or loss
+            print ("Yay! You WON!")
             raise Exception
         
         if (SHOW_STATE_CHANGE_INDICATOR):
@@ -168,4 +181,6 @@ try:
 
 except KeyboardInterrupt:
     unicornhathd.off()
+
+
 
