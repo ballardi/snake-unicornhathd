@@ -6,7 +6,8 @@ from random import randint
 import keyboard
 
 SHOW_STATE_CHANGE_INDICATOR = True;
-SLEEP_BETWEEN_FRAMES = .5
+SLEEP_BETWEEN_FRAMES = .2
+FOOD_COUNT_TO_WIN = 5
 
 #############################
 class Game:
@@ -14,20 +15,31 @@ class Game:
     def __init__(self):
         self.state = "alive" # alive, lost, won
         self.snake = Snake() # create snake
-        self.food = FoodItem() #  create food
+        self.food = self.makeNewFood() #  create food
+        self.ateCount = 0 # number of foods eaten
     
     def advanceState(self):
         
-        if (self.snake.isForwardOutOfBounds()):
+        moveOutcome = self.snake.moveForward(self.food)
+                
+        # outOfBounds, ate, ateSelf, moved
+        if (moveOutcome == "outOfBounds" or moveOutcome == "ateSelf"):
             self.state = "lost"
-        elif(self.snake.isForwardfood(self.food)):
+        elif(moveOutcome == "ate" and self.ateCount+1 == FOOD_COUNT_TO_WIN):
             self.state = "won"
-        else:    
-            self.snake.moveForward()
+        elif(moveOutcome == "ate"):
+            self.ateCount += 1
+            self.food = self.makeNewFood()
+            
+    def makeNewFood(self):
         
-        # todo potentially die
-        # todo potentially eat, get longer, make new food
-        # todo move snake
+        newFoodOverlapsWithSnake = True
+        while(newFoodOverlapsWithSnake):
+            x = randint(0,15)
+            y = randint(0,15)
+            newFoodOverlapsWithSnake = self.snake.doCoordsOverlap(x,y)
+        
+        return FoodItem(x,y)
     
 #############################
 class Snake:
@@ -35,7 +47,16 @@ class Snake:
     def __init__(self):
         self.head = SnakeSegment()
         self.tail = self.head
-        self.direction = "r" # options: udlr
+        self.direction = "r" # direction of head. options: udlr
+        self.len = 1
+
+    def doCoordsOverlap(self, x, y):
+        currentSegment = self.head
+        while(currentSegment != 0):
+            if(currentSegment.x == x and currentSegment.y == y):
+                return True
+            currentSegment = currentSegment.backwardSegment
+        return False
 
     def changeDirection(self, direction):
         self.direction = direction
@@ -63,7 +84,7 @@ class Snake:
             return False
         
     def isForwardSnake(self):
-        x=1 # todo
+        return False # todo
         
     def isForwardOutOfBounds(self):
         if(self.getNextX() < 0 or self.getNextX() > 15
@@ -72,13 +93,49 @@ class Snake:
         else:
             return False
 
-    def moveForward(self):
+    # moves snake forward. can return strings: outOfBounds, ate, ateSelf, moved
+    def moveForward(self, food):
+
         newx = self.getNextX()
         newy = self.getNextY()
-        
-        self.head.x = newx
-        self.head.y = newy
-        # todo update snake segments moving in current direction
+
+        if (self.isForwardOutOfBounds()):
+            return "outOfBounds"
+        elif(self.isForwardSnake()):
+            return "ateSelf"
+        elif(self.isForwardfood(food)):
+            # extend length by adding a head but keep tail in same place
+            self.len += 1
+           
+            newHead = SnakeSegment()
+            newHead.x = newx
+            newHead.y = newy
+            newHead.forwardSegment = 0
+            newHead.backwardSegment = self.head
+            self.head.forwardSegment = newHead
+            self.head = newHead
+
+            return "ate"
+        else:
+            
+            if(self.len == 1):
+                self.head.x = newx
+                self.head.y = newy
+            else:
+                # maintain length by moving head forward and removing tail
+                newHead = SnakeSegment()
+                newHead.x = newx
+                newHead.y = newy
+                newHead.forwardSegment = 0
+                newHead.backwardSegment = self.head
+                self.head.forwardSegment = newHead
+                self.head = newHead
+                
+                newTail = self.tail.forwardSegment
+                newTail.backwardSegment = 0
+                self.tail = newTail
+
+            return "moved"
   
 #############################
 class SnakeSegment:
@@ -92,9 +149,9 @@ class SnakeSegment:
 #############################
 class FoodItem:
     
-    def __init__(self):
-        self.x = 9
-        self.y = 9
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
         
 #############################
 def drawSnake(game):
@@ -112,12 +169,12 @@ def drawSnake(game):
     g = int(rgb[1]*255.0)
     b = int(rgb[2]*255.0)
     
-    # todo draw snake
-    x = game.snake.head.x
-    y = game.snake.head.y
-    
-    # sets the pixels on the unicorn hat
-    unicornhathd.set_pixel(x, y, r, g, b)
+    # draw snake
+    currentSegment = game.snake.head
+    while(currentSegment != 0):
+        # sets the pixels on the unicorn hat
+        unicornhathd.set_pixel(currentSegment.x, currentSegment.y, r, g, b)
+        currentSegment = currentSegment.backwardSegment
 
 #############################
 def drawFood(game):
