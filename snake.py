@@ -50,9 +50,31 @@ class Snake:
         self.direction = "r" # direction of head. options: udlr
         self.len = 1
 
+    def setDirection(self, newDirection):
+        if(self.len == 1):
+            self.direction = newDirection
+        else: # if len > 1
+            if(self.direction == "l" and newDirection == "r"):
+                return
+            if(self.direction == "r" and newDirection == "l"):
+                return
+            if(self.direction == "u" and newDirection == "d"):
+                return
+            if(self.direction == "d" and newDirection == "u"):
+                return
+            self.direction = newDirection
+
     def doCoordsOverlap(self, x, y):
         currentSegment = self.head
         while(currentSegment != 0):
+            if(currentSegment.x == x and currentSegment.y == y):
+                return True
+            currentSegment = currentSegment.backwardSegment
+        return False
+
+    def doCoordsOverlapExcludingTail(self, x, y):
+        currentSegment = self.head
+        while(currentSegment != 0 and currentSegment != self.tail):
             if(currentSegment.x == x and currentSegment.y == y):
                 return True
             currentSegment = currentSegment.backwardSegment
@@ -77,14 +99,14 @@ class Snake:
         else:
             return self.head.y
         
-    def isForwardfood(self, food):
+    def isForwardFood(self, food):
         if(self.getNextX() == food.x and self.getNextY() == food.y):
             return True
         else:
             return False
         
     def isForwardSnake(self):
-        return self.doCoordsOverlap(self.getNextX(), self.getNextY())
+        return self.doCoordsOverlapExcludingTail(self.getNextX(), self.getNextY())
         
     def isForwardOutOfBounds(self):
         if(self.getNextX() < 0 or self.getNextX() > 15
@@ -103,7 +125,7 @@ class Snake:
             return "outOfBounds"
         elif(self.isForwardSnake()):
             return "ateSelf"
-        elif(self.isForwardfood(food)):
+        elif(self.isForwardFood(food)):
             # extend length by adding a head but keep tail in same place
             self.len += 1
            
@@ -222,17 +244,13 @@ try:
         time.sleep(SLEEP_BETWEEN_FRAMES)
         
         if keyboard.is_pressed('w'):
-            print ("up")
-            game.snake.direction = "u"
+            game.snake.setDirection("u")
         elif keyboard.is_pressed('s'):
-            print ("down")
-            game.snake.direction = "d"
+            game.snake.setDirection("d")
         elif keyboard.is_pressed('a'):
-            print ("left")
-            game.snake.direction = "l"
+            game.snake.setDirection("l")
         elif keyboard.is_pressed('d'):
-            print ("right")
-            game.snake.direction = "r"
+            game.snake.setDirection("r")
 
         game.advanceState()
 
