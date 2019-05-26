@@ -6,7 +6,7 @@ from random import randint
 import keyboard
 
 SHOW_STATE_CHANGE_INDICATOR = True;
-SLEEP_BETWEEN_FRAMES = .2
+SLEEP_BETWEEN_FRAMES = .1
 FOOD_COUNT_TO_WIN = 5
 
 #############################
@@ -84,7 +84,7 @@ class Snake:
             return False
         
     def isForwardSnake(self):
-        return False # todo
+        return self.doCoordsOverlap(self.getNextX(), self.getNextY())
         
     def isForwardOutOfBounds(self):
         if(self.getNextX() < 0 or self.getNextX() > 15
